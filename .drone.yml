@@ -1,26 +1,27 @@
-pipeline:
-  test:
-    image: golang:1.6
-    environment:
-      - CGO_ENABLED=0
-      - GOPATH=/drone
-    commands:
-      - make vet
-      - make build
-      - make test
-  docker:
-    storage_driver: overlay
-    repo: plugins/drone-ecs
-    tag: [ "latest" ]
-    when:
-      branch: release/0.4
-      event: push
+build:
+  image: golang:1.6
+  environment:
+    - CGO_ENABLED=0
+    - GOPATH=/drone
+  commands:
+    - make vet
+    - make build
+    - make test
 
-plugin:
-  name: ECS
-  desc: Deploy or update a project on AWS ECS
-  type: deploy
-  image: plugins/drone-ecs
-  labels:
-    - aws
-    - paas
+publish:
+  docker:
+    username: $$DOCKER_USER
+    password: $$DOCKER_PASS
+    email: $$DOCKER_EMAIL
+    repo: registry.b4cc.com:5000/drone-ecs
+    tag: latest
+    when:
+      branch: master
+  docker:
+    username: $$DOCKER_USER
+    password: $$DOCKER_PASS
+    email: $$DOCKER_EMAIL
+    repo: registry.b4cc.com:5000/drone-ecs
+    tag: develop
+    when:
+      branch: develop
