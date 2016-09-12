@@ -10,8 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecs"
-	"github.com/drone/drone-go/drone"
-	"github.com/drone/drone-go/plugin"
+	"github.com/linuskendall/drone-go/drone"
+	"github.com/linuskendall/drone-go/plugin"
 )
 
 var (
@@ -88,6 +88,10 @@ func main() {
 		vargs.Memory = 128
 	}
 
+	if vargs.MemoryReservation == 0 {
+		vargs.MemoryReservation = 128
+	}
+
 	svc := ecs.New(
 		session.New(&aws.Config{
 			Region:      aws.String(vargs.Region),
@@ -111,15 +115,32 @@ func main() {
 		Image:        aws.String(Image),
 		Links:        []*string{},
 		Memory:       aws.Int64(vargs.Memory),
+		MemoryReservation:       aws.Int64(vargs.MemoryReservation),
 		MountPoints:  []*ecs.MountPoint{},
 		Name:         aws.String(vargs.Family + "-container"),
 		PortMappings: []*ecs.PortMapping{},
+        LogConfiguration: &ecs.LogConfiguration{},
 
 		Ulimits: []*ecs.Ulimit{},
 		//User: aws.String("String"),
 		VolumesFrom: []*ecs.VolumeFrom{},
 		//WorkingDirectory: aws.String("String"),
 	}
+
+	if len(vargs.LogDriver) > 0 {
+        definition.LogConfiguration.LogDriver = aws.String(vargs.LogDriver)
+        definition.LogConfiguration.Options = make(map[string]*string)
+
+        // Log driver options
+        for _, logOption := range vargs.LogDriverOptions.Slice() {
+                cleanedLogOption := strings.Trim(logOption, " ")
+                parts := strings.SplitN(cleanedLogOption, "=", 2)
+                Name := aws.String(strings.Trim(parts[0], " "))
+                Value := aws.String(strings.Trim(parts[1], " "))
+
+                definition.LogConfiguration.Options[*Name] = Value
+        }
+    }
 
 	// Port mappings
 	for _, portMapping := range vargs.PortMappings.Slice() {

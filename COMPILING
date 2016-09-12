@@ -1,0 +1,3 @@
+docker run --rm -v "$PWD":/usr/src/drone-ecs -w /usr/src/drone-ecs -e GOPATH=/usr/ -e CGO_ENABLED=0 golang:1.6 go build
+docker build -t registry.b4cc.com:5000/plugins/drone-ecs:latest .
+docker push registry.b4cc.com:5000/plugins/drone-ecs:latest
